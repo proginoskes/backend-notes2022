@@ -15,6 +15,8 @@ const app=express()
 
 // parse json
 app.use(express.json())
+// serve build files first
+app.use(express.static('build'))
 
 // homemade middleware
 app.use(requestLogger())
