@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const requestLogger = require('./middleware/request-logger')
 const unknownEndpoint = require('./middleware/unknown-req')
+const errorHandler = require('./middleware/error-handler')
 const cors = require('cors')
 const mongoose = require('mongoose')
 
@@ -12,13 +13,27 @@ const url = process.env.MONGODB_URI
 mongoose.connect(url)
 
 const noteSchema = new mongoose.Schema({
-    content: String,
-    date: Date,
+    content: {
+        type: String,
+        minLength: 5,
+        required: true
+    },
+    date: {
+        type: Date,
+        required: true
+    },
     important: Boolean
 })
 
 const Note = mongoose.model('Note',noteSchema)
 
+noteSchema.set('toJSON', {
+    transform: (document, returnedObject) => {
+        returnedObject.id = returnedObject._id.toString()
+        delete returnedObject._id
+        delete returnedObject.__v
+    }
+})
 
 // const requestLogger = (request, response, next) => {
 //     console.log('Method:', request.method)
@@ -39,45 +54,6 @@ app.use(requestLogger())
 // cross origin access
 app.use(cors())
 
-// let notes = [
-//     {
-//         "id": 1,
-//         "content": "HTML is easy",
-//         "date": "2019-05-30T17:30:31.098Z",
-//         "important": true
-//     },
-//     {
-//         "id": 2,
-//         "content": "Browser can execute only JavaScript",
-//         "date": "2019-05-30T18:39:34.091Z",
-//         "important": true
-//     },
-//     {
-//         "id": 3,
-//         "content": "GET and POST are the most important methods of HTTP protocol",
-//         "date": "2019-05-30T19:20:14.298Z",
-//         "important": false
-//     },
-//     {
-//         "content": "Hello",
-//         "date": "2022-06-08T03:28:36.427Z",
-//         "important": false,
-//         "id": 4
-//     },
-//     {
-//         "content": "I Love Sonja Morgan",
-//         "date": "2022-06-08T03:29:47.412Z",
-//         "important": false,
-//         "id": 5
-//     },
-//     {
-//         "content": "Lelia",
-//         "date": "2022-06-08T03:30:26.749Z",
-//         "important": true,
-//         "id": 6
-//     }
-// ]
-
 app.get('/', (request, response) => {
     response.send('<h1>Hello World!</h1>')
 })
@@ -95,72 +71,79 @@ app.get('/api/notes', (request, response) => {
 })
   
 app.get('/api/notes/:id', (request, response) => {
-    const id = Number(request.params.id)
-    Note.findById(id, (err, note)=>{
-        if(note){
+    const id = request.params.id
+    Note
+        .findById(id)
+        .then(note=>{
             response.json(note)
-        }else{
+        })
+        .catch(()=>{
             response.status(404).end()
-        }
-    })
+        })
 })
 
-app.delete('/api/notes/:id', (request, response) =>{
-    const id=Number(request.params.id)
-    notes=notes.filter(note=>note.id!==id)
+app.delete('/api/notes/:id', (request, response, next) =>{
+    const id=request.params.id
+    Note
+        .findByIdAndRemove(id)
+        .then(()=>{
+            response.status(204).end()
+        })
+        .catch((err)=>{
+            return next(err)
+        })
 
-    response.status(204).end()
 })
 
 
-const generateId = () =>{
-    const maxId = notes.length > 0
-        ? Math.max(...notes.map(n=>n.id))
-        :0
-    return maxId+1
-}
 
-app.post('/api/notes/', (request, response)=>{
+app.post('/api/notes/', (request, response, next)=>{
     //console.log(request.body)
     const body = request.body
-    
-    if(!body.content){
-        return response.status(400).json({
-            error: 'content missing'
-        })
-    }
 
     const note = new Note({
         content: body.content,
         important: body.important||false,
-        date:new Date(),
-        id:generateId()
+        date: new Date()
     })
     
-    note.save().then(result =>{
-        response.json(note)
-        mongoose.connection.close
-    })
+    note
+        .save()
+        .then(() =>{
+            response.json(note)
+            mongoose.connection.close
+        })
+        .catch(err=>
+            next(err)
+        )
 
     
 })
 
-app.put('/api/notes/:id', (request, response)=>{
-    const id = Number(request.params.id)
-    const importance = request.body.important
-    console.log(typeof(importance))
-    let note = notes.find(note=>note.id===id)
-    if(note && typeof(importance)==='boolean'){
-        note.important = importance
-        response.json(note)
-    }else if(!note){
-        response.status(404).end()
-    }else{
-        response.status(400).end()
-    }
+app.put('/api/notes/:id', (request, response, next)=>{
+    const { content, important } = request.body
+
+    Note
+        .findByIdAndUpdate(
+            request.params.id, 
+            { content, important }, 
+            { new: true, runValidators: true, context: 'query'}
+        )
+        .then((updatedNote) => {
+            // still need to check for non-null note
+            if(updatedNote){    
+                response.json(updatedNote)
+            }else{
+                response.status(404).end()
+            }
+        })
+        .catch((err)=>
+            next(err)
+        )
 })
 
-app.use(unknownEndpoint())
+app.use(unknownEndpoint)
+app.use(errorHandler)
 
 const PORT = process.env.PORT||3001
 app.listen(PORT, () => {
