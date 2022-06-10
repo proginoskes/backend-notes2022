@@ -7,9 +7,9 @@ const userSchema = new mongoose.Schema({
     notes: [
         {
             type: mongoose.Schema.Types.ObjectId,
-            ret:'Note'
+            ref:'Note'
         }
-    ],
+    ]
 })
 
 userSchema.set('toJSON', {

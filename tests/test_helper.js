@@ -26,6 +26,15 @@ const notesInDb = async () => {
     return notes.map(note => note.toJSON())
 }
 
+// testing users
+const usersInDb = async()=>{
+    const users = await User.find({})
+    return users.map(u=>u.toJSON)
+}
+
 module.exports = {
-    initialNotes, nonExistingId, notesInDb
+    initialNotes, 
+    nonExistingId, 
+    notesInDb,
+    usersInDb
 }
