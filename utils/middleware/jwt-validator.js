@@ -1,7 +1,7 @@
 const jwt = require ('jsonwebtoken')
 const jwtValidator = () => {
     const getTokenFrom = request =>{
-        const authorization = request.get('authorization')
+        const authorization = request.get('Authorization')
         if(authorization && authorization.toLowerCase().startsWith('bearer ')){
             return authorization.substring(7)
         }
@@ -9,7 +9,8 @@ const jwtValidator = () => {
     }
 
     const validate = (request,response,next) => {
-        if(response.method === 'POST'){
+
+        if(request.method === 'POST'){
             const token = getTokenFrom(request)
             const decodedToken = jwt.verify(token,process.env.SECRET)
 
