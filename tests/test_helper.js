@@ -4,12 +4,15 @@ const initialNotes = [
     {
         content: 'HTML is easy',
         date: new Date(),
-        important: false
+        important: false,
+        user: "62a2cc8c2818e95c6487e5b4",
+        
     },
     {
         content: 'Browser can execute only Javascript',
         date: new Date(),
-        important: true
+        important: true,
+        user: "62a2cc8c2818e95c6487e5b4",
     } 
 ]
 

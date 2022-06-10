@@ -9,10 +9,12 @@ const jwtValidator = () => {
     }
 
     const validate = (request,response,next) => {
-        const token = getTokenFrom(request)
-        const decodedToken = jwt.verify(token,process.env.SECRET)
+        if(response.method === 'POST'){
+            const token = getTokenFrom(request)
+            const decodedToken = jwt.verify(token,process.env.SECRET)
 
-        response.locals.userId = decodedToken.id
+            response.locals.userId = decodedToken.id
+        }
 
         next()
     }
