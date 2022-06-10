@@ -8,7 +8,13 @@ const errorHandler = () => {
             return response.status(400).json({error: error.message})
         } else if (error.name === 'TypeError'){
             return response.status(404).json({error: error.message})
+        } else if (error.name === 'JsonWebTokenError') {
+            return response.status(401).json({
+                error: 'invalid token'
+            })
         }
+
+        logger.error(error.message)
     
         next(error)
     }

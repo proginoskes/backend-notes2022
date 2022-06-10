@@ -6,11 +6,13 @@ const cors = require('cors')
 
 const notesRouter = require('./controllers/notes')
 const usersRouter = require('./controllers/users')
+const loginRouter=require('./controllers/login')
 
 // middleware
 const requestLogger = require('./utils/middleware/request-logger')
 const errorHandler = require('./utils/middleware/error-handler')
 const unknownEndpoint = require('./utils/middleware/unknown-req')
+const jwtValidator = require('./utils/middleware/jwt-validator')
 
 const logger = require('./utils/logger')
 const mongoose = require('mongoose')
@@ -36,10 +38,12 @@ app.use(requestLogger())
 // cross origin access
 app.use(cors())
 
+app.use(jwtValidator())
+
 // routers
 app.use('/api/notes', notesRouter)
 app.use('/api/users', usersRouter)
-
+app.use('/api/login', loginRouter)
 
 app.use(errorHandler())
 app.use(unknownEndpoint())

@@ -22,23 +22,27 @@ notesRouter.delete('/:id', async (request, response, next) =>{
 })
 
 notesRouter.post('/', async (request, response, next)=>{
-    
     const body = request.body
+    console.log(body)
 
-    const user = await User.findById(body.userId)
+    if(!response.locals.userId){
+        return response.status(401).json({error: 'invalid token'})
+    } 
+
+    const user = await User.findById(response.locals.userId)
 
     const note = new Note({
         content: body.content,
         important: body.important||false,
         date: new Date(),
-        user: body.userId
+        user: response.locals.userId
     })
     
     const savedNote = await note.save()
     user.notes = user.notes.concat(savedNote._id)
     await user.save()
 
-    response.status(201).json(savedNote)    
+    return response.status(201).json(savedNote).end()
 })
 
 notesRouter.put('/:id', async (request, response, next)=>{
