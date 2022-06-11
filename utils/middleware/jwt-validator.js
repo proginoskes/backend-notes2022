@@ -9,11 +9,11 @@ const jwtValidator = () => {
     }
 
     const validate = (request,response,next) => {
-
-        if(request.method === 'POST'){
+        if(request.method === 'POST' 
+            && request.path !== '/api/login'){
             const token = getTokenFrom(request)
             const decodedToken = jwt.verify(token,process.env.SECRET)
-
+            
             response.locals.userId = decodedToken.id
         }
 
