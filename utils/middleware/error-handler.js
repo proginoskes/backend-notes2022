@@ -12,6 +12,8 @@ const errorHandler = () => {
             return response.status(401).json({
                 error: 'invalid token'
             })
+        } else if (error.name === 'ReferenceError'){
+            return response.status(404).json({error: error.message})
         }
 
         logger.error(error.message)

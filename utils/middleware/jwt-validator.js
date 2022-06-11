@@ -1,4 +1,5 @@
 const jwt = require ('jsonwebtoken')
+
 const jwtValidator = () => {
     const getTokenFrom = request =>{
         const authorization = request.get('Authorization')
@@ -8,9 +9,9 @@ const jwtValidator = () => {
         return null
     }
 
-    const validate = (request,response,next) => {
+    const validate = (request, response, next) => {
         if(request.method === 'POST' 
-            && request.path !== '/api/login'){
+            && request.path === '/api/notes'){
             const token = getTokenFrom(request)
             const decodedToken = jwt.verify(token,process.env.SECRET)
             
